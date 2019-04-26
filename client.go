@@ -23,7 +23,7 @@ func connClientHandler(c net.Conn) {
 		// }
 
 		if err := connection.writeMessage(strconv.Itoa(i)); err != nil {
-			fmt.Printf("Failed to write, %s\n", err)
+			logError.Printf("Failed to write, %s\n", err)
 			break
 		}
 
@@ -32,7 +32,7 @@ func connClientHandler(c net.Conn) {
 			break
 		}
 		if err != nil {
-			fmt.Printf("Failed to read, %s\n", err)
+			logError.Printf("Failed to read, %s\n", err)
 			break
 		}
 	}
@@ -41,14 +41,14 @@ func connClientHandler(c net.Conn) {
 
 	select {
 	case <-connection.closedChan:
-		fmt.Println("Done")
+		logInfo.Println("Done")
 	}
 }
 
 func runClient(serverAddress string, port int) {
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", serverAddress, port), 2*time.Second)
 	if err != nil {
-		fmt.Printf("Fail to connect, %s\n", err)
+		logError.Printf("Fail to connect, %s\n", err)
 		return
 	}
 

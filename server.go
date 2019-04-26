@@ -22,12 +22,12 @@ func connEchoHandler(c net.Conn) {
 			break
 		}
 		if err != nil {
-			fmt.Printf("Failed to read, %s\n", err)
+			logError.Printf("Failed to read, %s\n", err)
 			break
 		}
 
 		if err := connection.writeMessage(content); err != nil {
-			fmt.Printf("Failed to write, %s\n", err)
+			logError.Printf("Failed to write, %s\n", err)
 			break
 		}
 	}
@@ -36,7 +36,7 @@ func connEchoHandler(c net.Conn) {
 func runServer(port int) {
 	server, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		fmt.Printf("Fail to start server, %s\n", err)
+		logError.Printf("Fail to start server, %s\n", err)
 		return
 	}
 
@@ -45,11 +45,11 @@ func runServer(port int) {
 	for {
 		conn, err := server.Accept()
 		if err != nil {
-			fmt.Printf("Fail to connect, %s\n", err)
+			logError.Printf("Fail to connect, %s\n", err)
 			break
 		}
 
-		fmt.Println("Accepted new connection")
+		logInfo.Println("Accepted new connection")
 		go connEchoHandler(conn)
 	}
 }

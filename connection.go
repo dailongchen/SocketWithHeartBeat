@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"time"
@@ -57,9 +56,9 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 		case err := <-errChan:
 			c.err = err
 			if err == io.EOF {
-				fmt.Println("closed by peer...")
+				logInfo.Println("closed by peer...")
 			} else {
-				fmt.Printf("Error %s\n", err)
+				logError.Printf("Error %s\n", err)
 			}
 			break
 		}
@@ -72,8 +71,10 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 		for {
 			select {
 			case <-endReadRoution:
+				logInfo.Println("Stopped read routine")
 				endedRoutineCount++
 			case <-endWriteRoutine:
+				logInfo.Println("Stopped write routine")
 				endedRoutineCount++
 			case <-errChan:
 				break
@@ -87,9 +88,9 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 		close(endReadRoution)
 		close(endWriteRoutine)
 		close(errChan)
-
-		fmt.Println("Connection closed")
 		close(closedChan)
+
+		logInfo.Println("Connection closed")
 	}()
 
 	return c
@@ -106,20 +107,18 @@ func (c *connection) run(parentCtx context.Context, heartBeat bool) {
 			case <-ctx.Done():
 				break EndFor
 			default:
-				fmt.Println("reading")
 				message, err := c.mg.read()
 				if err != nil {
 					cancel()
 					c.errChan <- err
 					break EndFor
 				}
-				fmt.Printf("read: %s\n", message)
+				logInfo.Printf("read: %s\n", message)
 
 				c.readChan <- message
 			}
 		}
 
-		fmt.Println("End of read routine")
 		c.endReadRoution <- true
 	}()
 
@@ -143,17 +142,16 @@ func (c *connection) run(parentCtx context.Context, heartBeat bool) {
 			}
 
 			if len(sendingMessage) > 0 {
-				fmt.Printf("writing: %s\n", sendingMessage)
+				logInfo.Printf("writing: %s\n", sendingMessage)
 				if err := c.mg.write(sendingMessage); err != nil {
 					cancel()
 					c.errChan <- err
 					break EndFor
 				}
-				fmt.Println("write done")
+				logInfo.Println("write done")
 			}
 		}
 
-		fmt.Println("End of write routine")
 		c.endWriteRoutine <- true
 	}()
 }
