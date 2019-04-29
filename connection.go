@@ -10,15 +10,15 @@ import (
 const heartBeatMessage string = "heart beat"
 
 type connection struct {
-	connect         net.Conn
-	mg              messager
-	closedChan      chan bool
-	readChan        chan string
-	writeChan       chan string
-	errChan         chan error
-	endReadRoution  chan bool
-	endWriteRoutine chan bool
-	err             error
+	connect    net.Conn
+	mg         messager
+	closedChan chan bool
+	readChan   chan string
+	writeChan  chan string
+	errChan    chan error
+	stopRead   chan bool
+	stopWrite  chan bool
+	err        error
 }
 
 func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat bool) *connection {
@@ -33,8 +33,8 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 
 	errChan := make(chan error)
 
-	endReadRoution := make(chan bool)
-	endWriteRoutine := make(chan bool)
+	stopRead := make(chan bool)
+	stopWrite := make(chan bool)
 
 	c := &connection{
 		connect,
@@ -43,8 +43,8 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 		readChan,
 		writeChan,
 		errChan,
-		endReadRoution,
-		endWriteRoutine,
+		stopRead,
+		stopWrite,
 		nil}
 
 	c.run(ctx, heartBeat)
@@ -70,10 +70,10 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 		endedRoutineCount := 0
 		for {
 			select {
-			case <-endReadRoution:
+			case <-stopRead:
 				logInfo.Println("Stopped read routine")
 				endedRoutineCount++
-			case <-endWriteRoutine:
+			case <-stopWrite:
 				logInfo.Println("Stopped write routine")
 				endedRoutineCount++
 			case <-errChan:
@@ -85,8 +85,8 @@ func connected(ctx context.Context, connect net.Conn, timeout int64, heartBeat b
 			}
 		}
 
-		close(endReadRoution)
-		close(endWriteRoutine)
+		close(stopRead)
+		close(stopWrite)
 		close(errChan)
 		close(closedChan)
 
@@ -119,7 +119,7 @@ func (c *connection) run(parentCtx context.Context, heartBeat bool) {
 			}
 		}
 
-		c.endReadRoution <- true
+		c.stopRead <- true
 	}()
 
 	// write routine
@@ -152,7 +152,7 @@ func (c *connection) run(parentCtx context.Context, heartBeat bool) {
 			}
 		}
 
-		c.endWriteRoutine <- true
+		c.stopWrite <- true
 	}()
 }
 

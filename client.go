@@ -18,9 +18,9 @@ func connClientHandler(c net.Conn) {
 	connection := connected(ctx, c, 20, false)
 
 	for i := 0; i < 15; i++ {
-		// if i > 5 && i < 10 {
-		// 	time.Sleep(5 * time.Second)
-		// }
+		if i > 5 && i < 10 {
+			time.Sleep(5 * time.Second)
+		}
 
 		if err := connection.writeMessage(strconv.Itoa(i)); err != nil {
 			logError.Printf("Failed to write, %s\n", err)
@@ -39,10 +39,8 @@ func connClientHandler(c net.Conn) {
 
 	cancel()
 
-	select {
-	case <-connection.closedChan:
-		logInfo.Println("Done")
-	}
+	<-connection.closedChan
+	logInfo.Println("Done")
 }
 
 func runClient(serverAddress string, port int) {
